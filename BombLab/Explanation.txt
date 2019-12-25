@@ -1,0 +1,105 @@
+phase_1
+strings bomb
+"Brownie, you are doing a heck of a job"
+
+phase_2 --> FIGURE OUT HOW I DID THIS LATER
+
+disas
+cmpl $0x1,(%rsp) --> compares to 1 (first number)
+check flags (i r) [je] & [jne]
+
+
+phase_3
+
+disas --> mov $0x4025c3, %esi
+==> x/s 0x4025c3 --> figure out format
+%d %d --> two decimal numbers
+
+cmpl $0x7, 0xc(%rsp) --> 1st number b/w 0 & 7 (an arbritary number)
+
+Test: 2 30
+
+jmpq --> switch table --> look at disassembler 
+(gdb) ni
+mov $0x0, %eax
+(WALK THORUGH UNTIL)
+
+cmp 0x8(%rsp), %eax
+
+(gdb) p/d $eax
+-18 --> second number 
+
+phase_4
+(gdb) disas
+(gdb) until * [adress of mov $0x4025c3]
+(gdb) x/s 0x4025c3
+%d %d --> looking for 2 integers
+
+cmpl $0xe, 0xc(%rsp) --> 1st number between 0 & 14
+(brute force check each number between 0 & 14) --> get 10
+
+after call func4
+cmp $0x25, %eax --> second number 37
+
+
+phase_5
+
+calla <string_length>
+comp 0x6, %eax 
+==> string w/ 6 charachters
+
+(gdb) x/s 0x40239e
+"flames"
+
+r abcdef
+(gdb) x/s $rsp
+"aduier"
+
+r ghijkl
+(gdb) x/s $rsp
+"snfotv"
+
+r mnopqr
+(gdb) x/s $rsp
+"bylmad"
+
+r stuvwx
+(gdb) x/s $rsp
+"uiersn"
+
+r uvwxyz
+(gdb) x/s $rsp
+"ersnfo"
+
+"flames" = "ioapeg"
+
+phase_6
+
+<+209> mov %rdx, %rcx
+(gdb) x/3d $rcx
+<node n> nodeValue   nodeNumber   pointerToNextNode
+<node 1> 149 1
+<node 2> 235 2
+<node 3> 663 3
+<node 4> 331 4
+<node 5> 363 5
+<node 6> 737 6
+
+LOOK AT LAST LOOP
+
+0x00000000004010fd <+230>:   mov    0x8(%rbx),%rax
+0x0000000000401101 <+234>:   mov    (%rax),%eax
+0x0000000000401103 <+236>:   cmp    %eax,(%rbx)
+==> 0x0000000000401105 <+238>:   jge    0x40110c <phase_6+245>
+0x0000000000401107 <+240>:   callq  0x401421 <explode_bomb>
+0x000000000040110c <+245>:   mov    0x8(%rbx),%rbx
+0x0000000000401110 <+249>:   sub    $0x1,%ebp
+0x0000000000401113 <+252>:   jne    0x4010fd <phase_6+230>
+
+(gdb) display $eax
+
+nodeValue <= eax
+Test each nodeNumber w/ nodeValue <= eax 
+if jumps callq that position is correct
+number of rounds = position in list 
+

